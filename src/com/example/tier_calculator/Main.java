@@ -14,7 +14,7 @@ public class Main extends Application {
         Parent root = FXMLLoader.load(getClass().getResource("main.fxml"));
         primaryStage.setTitle("BOJ & Solved.Ac Tier Calculator");
         primaryStage.getIcons().add(new Image(getClass().getResourceAsStream("tier.png")));
-        primaryStage.setScene(new Scene(root, 600, 400));
+        primaryStage.setScene(new Scene(root, 600, 280));
         primaryStage.show();
     }
 

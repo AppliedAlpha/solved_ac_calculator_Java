@@ -1,10 +1,6 @@
 package com.example.tier_calculator;
 
 import com.example.tier_calculator.json.JSONObject;
-import javafx.beans.property.SimpleStringProperty;
-import javafx.beans.property.StringProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
@@ -12,9 +8,7 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextArea;
 import javafx.scene.paint.Color;
-import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -23,117 +17,87 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.InputStreamReader;
 import java.net.URL;
-import java.util.ArrayList;
 
 public class Controller {
+    // FXML Consistents
     @FXML private Label title;
-    @FXML private TextArea loadPath1;
-    @FXML private TextArea loadPath2;
-    @FXML private Button loadText;
-    @FXML private Button loadPath;
-    @FXML private Button launchText;
-    @FXML private Button launchPath;
-    @FXML private Button endl;
+    @FXML private TextArea loadText;
+    @FXML private Button loadTextFile;
+    @FXML private TextArea systemMessage;
     @FXML private Label tierName;
     @FXML private Label totalExp;
     @FXML private Label currExp;
-    @FXML private TextArea result;
     @FXML private WebView tierImage;
     @FXML private ProgressBar expBar;
-    private StringProperty textRecu = new SimpleStringProperty();
     private File file;
-    private File directory;
 
+    // Loading Text File
     @FXML
     public void loadTextFile(ActionEvent event) {
-        loadPath1.setText("");
+        loadText.setText("");
+
         FileChooser fileChooser = new FileChooser();
         FileChooser.ExtensionFilter extFilter = new FileChooser.ExtensionFilter("TXT files (*.txt)", "*.txt");
         fileChooser.getExtensionFilters().add(extFilter);
         file = fileChooser.showOpenDialog(null);
-        if (file != null){
-            loadPath1.setText(file.getAbsolutePath());
+
+        if (file != null){  // File Loaded
+            loadText.setText(file.getAbsolutePath());
+        }
+        else {
+            systemMessage.setText("Error: File Not Found. Did you get the right 'TXT' format file?");
         }
     }
 
+    // Calculating
     @FXML
     public void launchTextAction(ActionEvent event) {
-        result.setText("");
+        systemMessage.setText("");
         DiffwithTier.init();
         BufferedReader br = null;
-        try {
+
+        try {  // Try File Reading
             br = new BufferedReader(new FileReader(file));
         } catch (Exception var11) {
             var11.printStackTrace();
-            result.setText("파일을 제대로 설정하여 주십시오.");
+            systemMessage.setText("Error: File Not Found. Did you get the right 'TXT' format file?");
         }
-        ArrayList<Problem> pList = new ArrayList<>();
-        try {
+
+        try {  // Try Calculating
             int T = Integer.parseInt(br.readLine());
             long exp = 0L;
             for (int i = 1; i <= T; ++i) {
                 try {
                     Problem prob = getProblemDiff(br.readLine());
                     exp += (long) DiffwithTier.diffs[prob.getLevel()].getExpProblem();
-                    pList.add(prob);
                 } catch (Exception var10) {
                     var10.printStackTrace();
+                    systemMessage.setText("Error: Getting Tier Info Failed.");
                 }
-                result.appendText(String.format("%,d / %,d Completed.\n", i, T));
-                System.out.printf("%,d / %,d Completed.\n", i, T);
+                //System.out.printf("%,d / %,d Completed.\n", i, T);
             }
-            result.appendText("\n");
             System.out.println();
             printTierInfo(exp);
 
         } catch (Exception var12) {
             var12.printStackTrace();
+            systemMessage.setText("Error: Getting Tier Info Failed.");
         }
         try {
             br.close();
         } catch (Exception var9) {
             var9.printStackTrace();
+            systemMessage.setText("Error: File Reading Failed.");
         }
     }
 
-    @FXML
-    public void launchPathAction(ActionEvent event) {
-        result.setText("");
-        DiffwithTier.init();
-        File[] fileList = directory.listFiles();
-        ArrayList<Problem> pList = new ArrayList<>();
-        try {
-            long exp = 0L;
-            int T = fileList.length;
-            for (int i = 0; i < T; ++i) {
-                try {
-                    if (fileList[i].isDirectory()) {
-                        Problem prob = getProblemDiff(fileList[i].getName());
-                        exp += (long) DiffwithTier.diffs[prob.getLevel()].getExpProblem();
-                        pList.add(prob);
-                    }
-                } catch (Exception var10) {
-                    var10.printStackTrace();
-                }
-                result.appendText(String.format("%,d / %,d Completed.\n", i+1, T+1));
-                System.out.printf("%,d / %,d Completed.\n", i+1, T+1);
-            }
-            result.appendText("\n");
-            System.out.println();
-            printTierInfo(exp);
-        } catch (Exception var12) {
-            var12.printStackTrace();
-            result.setText("경로를 제대로 설정하여 주십시오.");
-        }
-
-    }
-
+    // Printing Tier
     private void printTierInfo(long exp) {
         UserTier uTier = new UserTier(exp);
         String color = "#000000";
-        result.appendText(String.format("Tier : %s\nEXP : %,d / %,d (%.2f%%)\nTotal EXP : %,d",
+        systemMessage.setText(String.format("Tier : %s, [EXP : %,d / %,d (%.2f%%)]",
                 uTier.getTier().getTierName(), uTier.getUserTier().getCurEXP(), uTier.getUserTier().getMEXP(),
-                uTier.getUserTier().getPer(), exp));
+                uTier.getUserTier().getPer()));
 
         tierName.setText(uTier.getTier().getTierName());
         totalExp.setText(String.format("%,d", exp));
@@ -162,7 +126,8 @@ public class Controller {
         tierImage.getEngine().load("https://solved.ac/res/tier-small/" + uTier.getTier().getTierLevel() + ".svg");
 }
 
-    public static Problem getProblemDiff(String pID) {
+    // Requesting API
+    public Problem getProblemDiff(String pID) {
         Problem prob = null;
 
         try {
@@ -188,24 +153,12 @@ public class Controller {
 
             JSONObject json = new JSONObject(response.toString());
             prob = new Problem(pID, json.getInt("level"), json.getInt("kudeki_level"));
+
         } catch (Exception var8) {
             var8.printStackTrace();
+            systemMessage.setText("Error: Getting Problem Info Failed.");
         }
-
         return prob;
-    }
-
-    @FXML
-    public void endlAction(ActionEvent event) {
-        textRecu.addListener(new ChangeListener<Object>() {
-            @Override
-            public void changed(ObservableValue<?> observable, Object oldValue,
-                                Object newValue) {
-                result.selectPositionCaret(result.getLength());
-                result.deselect();
-            }
-        });
-        result.appendText("\n");
     }
 
 }
