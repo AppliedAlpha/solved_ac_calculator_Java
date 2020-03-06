@@ -123,7 +123,7 @@ public class Controller {
                 uTier.getUserTier().getMEXP(), uTier.getUserTier().getPer());
         System.out.printf("Total EXP : %,d\n", exp);
 
-        tierImage.getEngine().load("https://solved.ac/res/tier-small/" + uTier.getTier().getTierLevel() + ".svg");
+        tierImage.getEngine().load("https://static.solved.ac/tier_small/" + uTier.getTier().getTierLevel() + ".svg");
 }
 
     // Requesting API
